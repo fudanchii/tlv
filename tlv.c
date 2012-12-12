@@ -122,7 +122,7 @@ int tlv_setValue(char *tag, int length, char *value)
 
 int tlv_dump(char *tlvStr, char *tagList[])
 {
-    int i = 0;
+    int i = 0, length = 0;
     char *tag;
     char *cursor = tlvStr;
     while (tag = tagList[i++]) {
@@ -130,8 +130,9 @@ int tlv_dump(char *tlvStr, char *tagList[])
             bin_cat(cursor, tag, 2);
             *(cursor++) = (byte) tlvEntry(tag)->length;
             bin_cat(cursor, tlvEntry(tag)->value, tlvEntry(tag)->length);
+            length += 2 + 1 + tlvEntry(tag)->length;
         }
     }
-    return strlen(cursor);
+    return length;
 }
 
