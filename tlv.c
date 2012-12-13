@@ -29,14 +29,6 @@
 
 #include "tlv.h"
 
-#ifndef NULL
-    #define NULL    (void *)0
-#endif
-
-#ifndef byte
-    #define byte    unsigned char
-#endif
-
 TLV *(tlvTable[0x100][0x100]);
 
 #define tlvEntry(tag) (tlvTable[(byte)tag[0]][(byte)tag[1]])
@@ -57,7 +49,7 @@ void tlv_initTable()
             tlvTable[i][j] = NULL;
 }
 
-TLV *tlv_new(int len, char **src)
+TLV *tlv_new(int len, byte **src)
 {
     TLV *node = malloc(sizeof(TLV));
     if (!node)
@@ -73,15 +65,15 @@ TLV *tlv_new(int len, char **src)
     return node;
 }
 
-int tlv_build(char *rawStr, char *tagList[])
+int tlv_build(byte *rawStr, byte *tagList[])
 {
     int i = 0;
-    char *tag = NULL;
-    char *cursor = rawStr;
+    byte *tag = NULL;
+    byte *cursor = rawStr;
     
     tlv_initTable();
     
-    while (tag = (char *) tagList[i++]) {
+    while (tag = tagList[i++]) {
         if (tagEq(tag, cursor)) {
             tlvEntry(tag) = tlv_new((byte)*(cursor++), &cursor);
         }
@@ -90,7 +82,7 @@ int tlv_build(char *rawStr, char *tagList[])
 }
 
 
-int tlv_getValue(char *tag, char **value)
+int tlv_getValue(byte *tag, byte **value)
 {
     if (!tlvEntry(tag))
         return -1;
@@ -98,13 +90,13 @@ int tlv_getValue(char *tag, char **value)
     return tlvEntry(tag)->length;
 }
 
-int tlv_insert(char *tag, TLV *tlv)
+int tlv_insert(byte *tag, TLV *tlv)
 {
     tlvEntry(tag) = tlv;
     return tlv->length;
 }
 
-int tlv_setValue(char *tag, int length, char *value)
+int tlv_setValue(byte *tag, int length, byte *value)
 {
     if (!tlvEntry(tag))
         return tlv_insert(tag, tlv_new(length, &value));
@@ -120,11 +112,11 @@ int tlv_setValue(char *tag, int length, char *value)
     return length;
 }
 
-int tlv_dump(char *tlvStr, char *tagList[])
+int tlv_dump(byte *tlvStr, byte *tagList[])
 {
     int i = 0, length = 0;
-    char *tag;
-    char *cursor = tlvStr;
+    byte *tag;
+    byte *cursor = tlvStr;
     while (tag = tagList[i++]) {
         if (tlvEntry(tag)) {
             bin_cat(cursor, tag, 2);

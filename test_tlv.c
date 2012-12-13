@@ -4,15 +4,15 @@
 
 int main()
 {
-    char *raw = "\x9f\x06\x05\xa0\x00\x00\x03\x33" \
+    byte *raw = "\x9f\x06\x05\xa0\x00\x00\x03\x33" \
                 "\x9f\x22\x01\x01" \
                 "\xdf\x02\x10" \
                     "\x80\xc8\x90\x20\x2e\xb6\x66\x51" \
                     "\xc4\xfc\x2c\xbe\x6d\xa9\xc5\xbe";
 
-    char *tags[] = {"\x9f\x06", "\x9f\x22", "\xdf\x02", NULL};
-    char *test_value;
-    char buf[32];
+    byte *tags[] = {"\x9f\x06", "\x9f\x22", "\xdf\x02", NULL};
+    byte *test_value;
+    byte buf[32];
     int test_len;
 
     test_begin;

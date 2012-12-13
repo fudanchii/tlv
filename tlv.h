@@ -27,18 +27,32 @@
 #ifndef TLV_H_
 #define TLV_H_
 
+#ifndef NULL
+    #define NULL    (void *)0
+#endif
+
+#ifndef byte
+    #define byte    unsigned char
+#endif
+
+#if HAVE_DEBUG
+#include <stdlib.h>
+#include <stdio.h>
+    #define dbg_print(param) fprintf(stderr, param)
+#endif
+
 typedef struct tlv {
     int length;
-    char *value;
+    byte *value;
 } TLV;
 
 /* tag can't be null char */
-int tlv_getValue(char *tag, char **value);
-int tlv_setValue(char *tag, int length, char *value);
-int tlv_dump(char *tlvStr, char *tagList[]);
+int tlv_getValue(byte *tag, byte **value);
+int tlv_setValue(byte *tag, int length, byte *value);
+int tlv_dump(byte *tlvStr, byte *tagList[]);
 
-TLV *tlv_new(int len, char **src);
-int tlv_build(char *rawStr, char *tagList[]);
+TLV *tlv_new(int len, byte **src);
+int tlv_build(byte *rawStr, byte *tagList[]);
 void tlv_initTable(void);
 
 
