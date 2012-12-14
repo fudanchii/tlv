@@ -35,12 +35,6 @@
     #define byte    unsigned char
 #endif
 
-#if HAVE_DEBUG
-#include <stdlib.h>
-#include <stdio.h>
-    #define dbg_print(param) fprintf(stderr, param)
-#endif
-
 typedef struct tlv {
     int length;
     byte *value;
@@ -52,6 +46,8 @@ int tlv_setValue(byte *tag, int length, byte *value);
 int tlv_dump(byte *tlvStr, byte *tagList[]);
 
 TLV *tlv_new(int len, byte **src);
+void tlv_free(void);
+
 int tlv_build(byte *rawStr, byte *tagList[]);
 void tlv_initTable(void);
 
