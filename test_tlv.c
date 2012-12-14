@@ -36,6 +36,8 @@ int main()
     assert_eq(test_len, 5);
     assert_mem(test_value, "Hello", 5);
 
+    tlv_free();
+
     test_end;
     return 0;
 }
