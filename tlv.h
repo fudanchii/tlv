@@ -35,6 +35,9 @@
     #define byte    unsigned char
 #endif
 
+#define TLV_IDX_MAX  0x100
+#define TLV_TAG_LEN  2
+
 typedef struct tlv {
     int length;
     byte *value;
@@ -48,7 +51,7 @@ int tlv_dump(byte *tlvStr, byte *tagList[]);
 TLV *tlv_new(int len, byte **src);
 void tlv_free(void);
 
-int tlv_build(byte *rawStr, byte *tagList[]);
+void tlv_build(byte *rawStr, byte *tagList[]);
 void tlv_initTable(void);
 
 
