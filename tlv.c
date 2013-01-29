@@ -35,11 +35,60 @@ TLV *(tlvTable[TLV_IDX_MAX][TLV_IDX_MAX]);
 
 #define TAG_EQ(tag, cmp) ((tag[0] == *(cmp++)) && (tag[1] == *(cmp++)))
 
+#define TLV_LEN_ALIGNMENT   0x80
+
 #define BIN_CAT(buf, src, len) \
 do { \
     memcpy(buf, src, len); \
     buf += len; \
 } while(0);
+
+#define BIN_ASSIGN(buf, ch) \
+do { \
+    (*(buf))[0] = ch; \
+    *(buf) += 1; \
+} while(0);
+
+size_t tlv_readTagLength(byte **cursor)
+{
+    size_t len = 0;
+    size_t bytelen = 1;
+
+    // set bytelen, the length of bytes for this field's length
+    if ((*cursor)[0] >= TLV_LEN_ALIGNMENT)
+        bytelen = (byte) (*cursor)[0] ^ TLV_LEN_ALIGNMENT;
+
+    // Accumulate field length from these bytes
+    while (bytelen--) {
+        len += (byte) (*cursor)[0];
+        *cursor += 1;
+    }
+
+    return len;
+}
+
+void tlv_writeTagLength(byte **buffer, int length)
+{
+    int tmpLen = length;
+    int slotNeeded = 0;
+
+    // check the length against TLV_LEN_ALIGNMENT
+    if (tmpLen >= TLV_LEN_ALIGNMENT) {
+        slotNeeded = tmpLen / 0xff;
+        if (tmpLen % 0xff) slotNeeded += 1;
+        BIN_ASSIGN(buffer, (byte) (0x80 | slotNeeded));
+    }
+
+    do {
+        if (tmpLen > 0xff) {
+            BIN_ASSIGN(buffer, 0xff);
+            tmpLen =  tmpLen - 0xff;
+        }
+        else {
+            BIN_ASSIGN(buffer, (byte)tmpLen);
+        }
+    } while (slotNeeded--);
+}
 
 void tlv_initTable()
 {
@@ -54,8 +103,7 @@ void tlv_free()
     int i, j;
     for (i = 0; i < TLV_IDX_MAX; i++)
         for (j = 0; j < TLV_IDX_MAX; j++)
-            if (tlvTable[i][j])
-            {
+            if (tlvTable[i][j]) {
                 if (tlvTable[i][j]->value)
                     free(tlvTable[i][j]->value);
                 free(tlvTable[i][j]);
@@ -81,6 +129,7 @@ TLV *tlv_new(int len, byte **src)
 void tlv_build(byte *rawStr, byte *tagList[])
 {
     int i = 0;
+    int tLen = 0;
     byte *tag = NULL;
     byte *cursor = rawStr;
     
@@ -88,7 +137,8 @@ void tlv_build(byte *rawStr, byte *tagList[])
     
     while (tag = tagList[i++]) {
         if (TAG_EQ(tag, cursor)) {
-            TLV_ENTRY(tag) = tlv_new((byte)*(cursor++), &cursor);
+            tLen = tlv_readTagLength(&cursor);
+            TLV_ENTRY(tag) = tlv_new(tLen, &cursor);
         }
     }
 }
@@ -132,7 +182,7 @@ int tlv_dump(byte *tlvStr, byte *tagList[])
     while (tag = tagList[i++]) {
         if (TLV_ENTRY(tag)) {
             BIN_CAT(cursor, tag, TLV_TAG_LEN);
-            *(cursor++) = (byte) TLV_ENTRY(tag)->length;
+            tlv_writeTagLength(&cursor, TLV_ENTRY(tag)->length);
             BIN_CAT(cursor, TLV_ENTRY(tag)->value, TLV_ENTRY(tag)->length);
             length += TLV_TAG_LEN + 1 + TLV_ENTRY(tag)->length;
         }
