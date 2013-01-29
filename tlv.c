@@ -37,6 +37,8 @@ TLV *(tlvTable[TLV_IDX_MAX][TLV_IDX_MAX]);
 
 #define TLV_LEN_ALIGNMENT   0x80
 
+#define TLV_BYTE_SIZE   0xff
+
 #define BIN_CAT(buf, src, len) \
 do { \
     memcpy(buf, src, len); \
@@ -54,9 +56,11 @@ size_t tlv_readTagLength(byte **cursor)
     size_t len = 0;
     size_t bytelen = 1;
 
-    // set bytelen, the length of bytes for this field's length
-    if ((*cursor)[0] >= TLV_LEN_ALIGNMENT)
+    // set bytelen, the number of bytes for this field's length
+    if ((*cursor)[0] >= TLV_LEN_ALIGNMENT) {
         bytelen = (byte) (*cursor)[0] ^ TLV_LEN_ALIGNMENT;
+        *cursor += 1;
+    }
 
     // Accumulate field length from these bytes
     while (bytelen--) {
@@ -67,27 +71,30 @@ size_t tlv_readTagLength(byte **cursor)
     return len;
 }
 
-void tlv_writeTagLength(byte **buffer, int length)
+size_t tlv_writeTagLength(byte **buffer, int length)
 {
-    int tmpLen = length;
+    size_t tmpLen = length;
     int slotNeeded = 0;
+    size_t retVal;
 
     // check the length against TLV_LEN_ALIGNMENT
     if (tmpLen >= TLV_LEN_ALIGNMENT) {
-        slotNeeded = tmpLen / 0xff;
-        if (tmpLen % 0xff) slotNeeded += 1;
-        BIN_ASSIGN(buffer, (byte) (0x80 | slotNeeded));
+        slotNeeded = tmpLen / TLV_BYTE_SIZE;
+        if (tmpLen % TLV_BYTE_SIZE) slotNeeded += 1;
+        BIN_ASSIGN(buffer, (byte) (TLV_LEN_ALIGNMENT | slotNeeded));
     }
 
+    retVal = slotNeeded + 1;
+
     do {
-        if (tmpLen > 0xff) {
-            BIN_ASSIGN(buffer, 0xff);
-            tmpLen =  tmpLen - 0xff;
+        if (tmpLen > TLV_BYTE_SIZE) {
+            BIN_ASSIGN(buffer, TLV_BYTE_SIZE);
+            tmpLen =  tmpLen - TLV_BYTE_SIZE;
         }
-        else {
-            BIN_ASSIGN(buffer, (byte)tmpLen);
-        }
+        else BIN_ASSIGN(buffer, (byte)tmpLen);
     } while (slotNeeded--);
+
+    return retVal;
 }
 
 void tlv_initTable()
@@ -177,14 +184,15 @@ int tlv_setValue(byte *tag, int length, byte *value)
 int tlv_dump(byte *tlvStr, byte *tagList[])
 {
     int i = 0, length = 0;
+    int lenLength = 0;
     byte *tag;
     byte *cursor = tlvStr;
     while (tag = tagList[i++]) {
         if (TLV_ENTRY(tag)) {
             BIN_CAT(cursor, tag, TLV_TAG_LEN);
-            tlv_writeTagLength(&cursor, TLV_ENTRY(tag)->length);
+            lenLength = tlv_writeTagLength(&cursor, TLV_ENTRY(tag)->length);
             BIN_CAT(cursor, TLV_ENTRY(tag)->value, TLV_ENTRY(tag)->length);
-            length += TLV_TAG_LEN + 1 + TLV_ENTRY(tag)->length;
+            length += TLV_TAG_LEN + lenLength + TLV_ENTRY(tag)->length;
         }
     }
     return length;
