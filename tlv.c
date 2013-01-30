@@ -142,7 +142,7 @@ void tlv_build(byte *rawStr, byte *tagList[])
     
     tlv_initTable();
     
-    while (tag = tagList[i++]) {
+    while ((tag = tagList[i++])) {
         if (TAG_EQ(tag, cursor)) {
             tLen = tlv_readTagLength(&cursor);
             TLV_ENTRY(tag) = tlv_new(tLen, &cursor);
@@ -187,7 +187,7 @@ int tlv_dump(byte *tlvStr, byte *tagList[])
     int lenLength = 0;
     byte *tag;
     byte *cursor = tlvStr;
-    while (tag = tagList[i++]) {
+    while ((tag = tagList[i++])) {
         if (TLV_ENTRY(tag)) {
             BIN_CAT(cursor, tag, TLV_TAG_LEN);
             lenLength = tlv_writeTagLength(&cursor, TLV_ENTRY(tag)->length);
