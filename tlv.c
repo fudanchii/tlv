@@ -74,7 +74,7 @@ size_t tlv_readTagLength(byte **cursor)
 size_t tlv_writeTagLength(byte **buffer, int length)
 {
     size_t tmpLen = length;
-    int slotNeeded = 0;
+    int slotNeeded = 1;
     size_t retVal;
 
     // check the length against TLV_LEN_ALIGNMENT
@@ -82,17 +82,17 @@ size_t tlv_writeTagLength(byte **buffer, int length)
         slotNeeded = tmpLen / TLV_BYTE_SIZE;
         if (tmpLen % TLV_BYTE_SIZE) slotNeeded += 1;
         BIN_ASSIGN(buffer, (byte) (TLV_LEN_ALIGNMENT | slotNeeded));
+        retVal = slotNeeded + 1;
     }
+    else retVal = slotNeeded;
 
-    retVal = slotNeeded + 1;
-
-    do {
+    while (slotNeeded--) {
         if (tmpLen > TLV_BYTE_SIZE) {
             BIN_ASSIGN(buffer, TLV_BYTE_SIZE);
             tmpLen =  tmpLen - TLV_BYTE_SIZE;
         }
         else BIN_ASSIGN(buffer, (byte)tmpLen);
-    } while (slotNeeded--);
+    }
 
     return retVal;
 }
